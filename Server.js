@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,7 +13,7 @@ const io = new Server(server, {
   }
 });
 
-// Middlewares para procesar JSON y archivos estáticos
+// Middlewares para lectura de JSON, formularios y archivos estáticos
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
@@ -21,9 +22,7 @@ app.use(express.static(__dirname));
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  // Validación de credenciales
   if (username === 'bobinado' && password === 'weg2026') {
-    // Redirige al menú de selección de curso (tlt.html)
     return res.json({ success: true, redirectTo: '/tlt' });
   } else if (username === 'admin' && password === 'admin2026') {
     return res.json({ success: true, redirectTo: '/control' });
@@ -41,38 +40,42 @@ app.get('/tlt', (req, res) => {
   res.sendFile(path.join(__dirname, 'tlt.html'));
 });
 
-// Captura /curso?id=... y entrega index.html respetando tus parámetros
+// Ruta /curso que respeta la query /curso?id=... y entrega index.html
 app.get('/curso', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  const indexPath = path.join(__dirname, 'index.html');
+  
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // Respaldo por si el nombre tiene mayúsculas en el repositorio
+    res.sendFile(path.join(__dirname, 'INDEX.html'));
+  }
 });
 
 app.get('/control', (req, res) => {
   res.sendFile(path.join(__dirname, 'control.HTML'));
 });
 
-app.get('/control', (req, res) => {
-  res.sendFile(path.join(__dirname, 'control.HTML'));
-});
-// Lógica de WebSocket (Socket.IO)
+// Comunicación en tiempo real vía Socket.IO (Control Remoto & Trackpad)
 io.on('connection', (socket) => {
   console.log('Cliente conectado:', socket.id);
 
-  // Reenviar movimientos del trackpad a todas las pantallas
+  // Movimiento del cursor (bolita)
   socket.on('trackpad-move', (data) => {
     io.emit('trackpad-move', data);
   });
 
-  // Reenviar clics del trackpad
+  // Clic virtual
   socket.on('trackpad-click', () => {
     io.emit('trackpad-click');
   });
 
-  // Reenviar acciones del D-Pad / Botones
+  // Acciones de botones de mando (siguiente, atrás, etc.)
   socket.on('control-action', (data) => {
     io.emit('control-action', data);
   });
 
-  // Reenviar escritura del teclado virtual
+  // Teclado virtual
   socket.on('keyboard-input', (data) => {
     io.emit('keyboard-input', data);
   });
