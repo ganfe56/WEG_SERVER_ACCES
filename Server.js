@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,16 +39,9 @@ app.get('/tlt', (req, res) => {
   res.sendFile(path.join(__dirname, 'tlt.html'));
 });
 
-// Ruta /curso que respeta la query /curso?id=... y entrega index.html
+// Apunta exactamente a index.HTML en mayúsculas
 app.get('/curso', (req, res) => {
-  const indexPath = path.join(__dirname, 'index.html');
-  
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    // Respaldo por si el nombre tiene mayúsculas en el repositorio
-    res.sendFile(path.join(__dirname, 'INDEX.html'));
-  }
+  res.sendFile(path.join(__dirname, 'index.HTML'));
 });
 
 app.get('/control', (req, res) => {
@@ -60,22 +52,18 @@ app.get('/control', (req, res) => {
 io.on('connection', (socket) => {
   console.log('Cliente conectado:', socket.id);
 
-  // Movimiento del cursor (bolita)
   socket.on('trackpad-move', (data) => {
     io.emit('trackpad-move', data);
   });
 
-  // Clic virtual
   socket.on('trackpad-click', () => {
     io.emit('trackpad-click');
   });
 
-  // Acciones de botones de mando (siguiente, atrás, etc.)
   socket.on('control-action', (data) => {
     io.emit('control-action', data);
   });
 
-  // Teclado virtual
   socket.on('keyboard-input', (data) => {
     io.emit('keyboard-input', data);
   });
