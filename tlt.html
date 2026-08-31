@@ -269,8 +269,84 @@
       container.innerHTML = htmlContent;
     }
 
-    // Carga inicial
+// Carga inicial
     actualizarVista();
+  </script>
+
+  <!-- Cargar librería de Socket.IO -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <!-- Script del trackpad y cursor virtual -->
+  <script>
+    const socket = io();
+
+    let cursor = document.getElementById('virtual-cursor');
+    if (!cursor) {
+      cursor = document.createElement('div');
+      cursor.id = 'virtual-cursor';
+      cursor.style.cssText = `
+        position: fixed;
+        width: 24px;
+        height: 24px;
+        background-color: #007bff;
+        border: 3px solid #ffffff;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 999999;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        top: 50%;
+        left: 50%;
+        display: block;
+      `;
+      document.body.appendChild(cursor);
+    }
+
+    let cursorX = window.innerWidth / 2;
+    let cursorY = window.innerHeight / 2;
+
+    function updatePosition(x, y) {
+      cursorX = Math.max(10, Math.min(window.innerWidth - 10, x));
+      cursorY = Math.max(10, Math.min(window.innerHeight - 10, y));
+      cursor.style.left = cursorX + 'px';
+      cursor.style.top = cursorY + 'px';
+    }
+
+    updatePosition(cursorX, cursorY);
+
+    socket.on('trackpad-move', (data) => {
+      const dx = data.dx ?? data.deltaX ?? 0;
+      const dy = data.dy ?? data.deltaY ?? 0;
+
+      if (dx !== 0 || dy !== 0) {
+        updatePosition(cursorX + dx, cursorY + dy);
+        return;
+      }
+
+      if (typeof data.x === 'number' && typeof data.y === 'number') {
+        const targetX = data.x <= 1 ? data.x * window.innerWidth : data.x;
+        const targetY = data.y <= 1 ? data.y * window.innerHeight : data.y;
+        updatePosition(targetX, targetY);
+      }
+    });
+
+    socket.on('trackpad-click', () => {
+      const element = document.elementFromPoint(cursorX, cursorY);
+      if (element) {
+        element.click();
+        if (typeof element.focus === 'function') {
+          element.focus();
+        }
+      }
+    });
+
+    socket.on('control-action', (data) => {
+      const action = typeof data === 'object' ? data.action : data;
+      if (action === 'click' || action === 'select') {
+        const element = document.elementFromPoint(cursorX, cursorY);
+        if (element) element.click();
+      }
+    });
   </script>
 </body>
 </html>
