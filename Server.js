@@ -32,7 +32,7 @@ app.post('/login', (req, res) => {
   return res.json({ success: false, message: 'Usuario o contraseña incorrectos' });
 });
 
-// Rutas principales
+// Rutas principales de navegación
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'login.html'));
 });
@@ -41,8 +41,13 @@ app.get('/tlt', (req, res) => {
   res.sendFile(path.join(__dirname, 'tlt.html'));
 });
 
+// Captura /curso?id=... y entrega index.html respetando tus parámetros
 app.get('/curso', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/control', (req, res) => {
+  res.sendFile(path.join(__dirname, 'control.HTML'));
 });
 
 app.get('/control', (req, res) => {
