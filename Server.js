@@ -32,7 +32,7 @@ app.post('/login', (req, res) => {
   return res.json({ success: false, message: 'Usuario o contraseña incorrectos' });
 });
 
-// Rutas de navegación principales
+// Rutas principales
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'login.html'));
 });
@@ -41,10 +41,13 @@ app.get('/tlt', (req, res) => {
   res.sendFile(path.join(__dirname, 'tlt.html'));
 });
 
+app.get('/curso', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.get('/control', (req, res) => {
   res.sendFile(path.join(__dirname, 'control.HTML'));
 });
-
 // Lógica de WebSocket (Socket.IO)
 io.on('connection', (socket) => {
   console.log('Cliente conectado:', socket.id);
