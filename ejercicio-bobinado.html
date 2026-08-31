@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ejercicio Interactivo: Esquema de Diagrama de Bobinado — WEG</title>
+  <style>
+    :root {
+      --bg-dark: #001E36;
+      --bg-card: #012647;
+      --blue-accent: #57B7DC;
+      --text-light: #F4F7FB;
+      --text-muted: #A4D8E3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      color: var(--blue-accent);
+      margin-bottom: 0.4rem;
+      text-align: center;
+    }
+
+    p.subtitle {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      text-align: center;
+    }
+
+    .canvas-container {
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      padding: 10px;
+      margin-bottom: 1rem;
+    }
+
+    canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 0.8rem 1.8rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .phase-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .phase-selector label {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--text-muted);
+    }
+
+    .color-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      border: 2px solid transparent;
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .color-btn .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+    }
+
+    .color-btn[data-phase="blue"] .swatch { background: #0000ff; }
+    .color-btn[data-phase="green"] .swatch { background: #008000; }
+    .color-btn[data-phase="red"] .swatch { background: #ff0000; border: 1px dashed #fff; }
+
+    .color-btn.active {
+      border-color: #ffd700;
+      background: rgba(255,255,255,0.18);
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .btn {
+      padding: 0.6rem 1.3rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .btn:active { transform: scale(0.96); }
+
+    .btn-reset { background: #dc3545; color: #fff; }
+    .btn-reset:hover { background: #bb2d3b; }
+
+    .btn-undo { background: #6c757d; color: #fff; }
+    .btn-undo:hover { background: #5c636a; }
+
+    .btn-verify { background: #198754; color: #fff; }
+    .btn-verify:hover { background: #157347; }
+  </style>
+</head>
+<body>
+
+  <h1>Ejercicio Interactivo: Esquema de Diagrama de Bobinado</h1>
+  <p class="subtitle">Une las terminales según el diagrama técnico trifásico seleccionando la fase correspondiente.</p>
+
+  <div class="canvas-container">
+    <canvas id="windingCanvas" width="1000" height="540"></canvas>
+  </div>
+
+  <div class="toolbar">
+    <div class="phase-selector">
+      <label>Fase / Color:</label>
+      <button class="color-btn active" data-phase="blue" onclick="setPhase('blue', this)">
+        <span class="swatch"></span> Azul
+      </button>
+      <button class="color-btn" data-phase="green" onclick="setPhase('green', this)">
+        <span class="swatch"></span> Verde
+      </button>
+      <button class="color-btn" data-phase="red" onclick="setPhase('red', this)">
+        <span class="swatch"></span> Rojo (Punteado)
+      </button>
+    </div>
+
+    <div class="action-btns">
+      <button class="btn btn-undo" onclick="deshacerUltimo()">Deshacer</button>
+      <button class="btn btn-reset" onclick="limpiarTrazos()">Reiniciar Trazo</button>
+      <button class="btn btn-verify" onclick="validarEjercicio()">Verificar Conexión</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('windingCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let faseActual = 'blue';
+
+    const CONFIG_FASE = {
+      blue: { color: '#0000ff', dash: [] },
+      green: { color: '#008000', dash: [] },
+      red: { color: '#ff0000', dash: [4, 3] }
+    };
+
+    const marginX = 25;
+    const stepX = 38;
+    const yPicoBase = 220;
+
+    function getX(ranura) {
+      return marginX + ranura * stepX;
+    }
+
+    const NODOS = {};
+    for (let i = 1; i <= 24; i++) {
+      NODOS['R' + i] = { id: 'R' + i, x: getX(i), y: yPicoBase + 10, type: 'slot', num: i };
+    }
+
+    const SALIDAS_T = [
+      { id: 'T1', slot: 1, label: 'T1', fase: 'blue' },
+      { id: 'T6', slot: 5, label: 'T6', fase: 'green' },
+      { id: 'T2', slot: 9, label: 'T2', fase: 'red' },
+      { id: 'T4', slot: 13, label: 'T4', fase: 'blue' },
+      { id: 'T3', slot: 17, label: 'T3', fase: 'green' },
+      { id: 'T5', slot: 21, label: 'T5', fase: 'red' }
+    ];
+
+    const yTerminals = 510;
+    SALIDAS_T.forEach(st => {
+      NODOS[st.id] = { id: st.id, x: getX(st.slot), y: yTerminals, type: 'terminal', label: st.label };
+    });
+
+    let nodoSeleccionado = null;
+    let conexionesUsuario = [];
+
+    // Cálculo dinámico para evitar colisiones entre trazos paralelos
+    function calcularGeometriaTrazo(nodoA, nodoB, index) {
+      if (nodoA.type === 'terminal' || nodoB.type === 'terminal') {
+        return { yLevel: yTerminals, xOffsetA: 0, xOffsetB: 0 };
+      }
+      
+      const dist = Math.abs(nodoA.num - nodoB.num);
+      let baseHeight = 260;
+      if (dist >= 14) baseHeight = 420;
+      else if (dist >= 10) baseHeight = 370;
+      else if (dist >= 6)  baseHeight = 320;
+
+      // Separación vertical en cascada para conexiones concurrentes
+      const offsetPaso = (index % 4) * 12; 
+      // Desfase horizontal suave para evitar la superposición directa de verticales
+      const xOffset = ((index % 3) - 1) * 3;
+
+      return {
+        yLevel: baseHeight + offsetPaso,
+        xOffsetA: xOffset,
+        xOffsetB: -xOffset
+      };
+    }
+
+    function dibujarDiagramaBase() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // --- LINEAS GUÍA DE CARRIL SUBTERRÁNEAS (Guías visuales de separación) ---
+      ctx.strokeStyle = '#e9ecef';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 4]);
+      [260, 272, 284, 320, 332, 344, 370, 382, 420, 432].forEach(yGuide => {
+        ctx.beginPath();
+        ctx.moveTo(marginX, yGuide);
+        ctx.lineTo(marginX + 25 * stepX, yGuide);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      // --- DIBUJO DE PICOS SUPERIORES ---
+      const bobinas = [
+        { r1: -1, r2: 8, color: '#ff0000', dash: [4,3], span: 9, h: 180 },
+        { r1: 0, r2: 7, color: '#ff0000', dash: [4,3], span: 7, h: 140 },
+        { r1: 1, r2: 12, color: '#0000ff', dash: [], span: 11, h: 180 },
+        { r1: 2, r2: 11, color: '#0000ff', dash: [], span: 9, h: 140 },
+        { r1: 3, r2: 16, color: '#008000', dash: [], span: 13, h: 180 },
+        { r1: 4, r2: 15, color: '#008000', dash: [], span: 11, h: 140 },
+        { r1: 9, r2: 20, color: '#ff0000', dash: [4,3], span: 11, h: 180 },
+        { r1: 10, r2: 19, color: '#ff0000', dash: [4,3], span: 9, h: 140 },
+        { r1: 13, r2: 24, color: '#0000ff', dash: [], span: 11, h: 180 },
+        { r1: 14, r2: 23, color: '#0000ff', dash: [], span: 9, h: 140 },
+        { r1: 17, r2: 30, color: '#008000', dash: [], span: 13, h: 180 },
+        { r1: 18, r2: 29, color: '#008000', dash: [], span: 11, h: 140 },
+        { r1: 21, r2: 32, color: '#ff0000', dash: [4,3], span: 11, h: 180 },
+        { r1: 22, r2: 31, color: '#ff0000', dash: [4,3], span: 9, h: 140 }
+      ];
+
+      bobinas.forEach(b => {
+        let x1 = getX(b.r1);
+        let x2 = getX(b.r2);
+        let xMid = (x1 + x2) / 2;
+        let yPeak = yPicoBase - b.h;
+
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash(b.dash);
+
+        if (x1 >= marginX - 40 && x1 <= marginX + 25 * stepX) {
+          ctx.beginPath();
+          ctx.moveTo(x1, yPicoBase);
+          ctx.lineTo(xMid, yPeak);
+          ctx.stroke();
+        }
+
+        if (x2 >= marginX - 40 && x2 <= marginX + 25 * stepX) {
+          ctx.beginPath();
+          ctx.moveTo(xMid, yPeak);
+          ctx.lineTo(x2, yPicoBase);
+          ctx.stroke();
+        }
+      });
+
+      ctx.setLineDash([]);
+
+      // --- DIBUJO DE RANURAS Y NÚMEROS (1 A 24) ---
+      for (let i = 1; i <= 24; i++) {
+        let x = getX(i);
+
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, yPicoBase);
+        ctx.lineTo(x, yPicoBase + 22);
+        ctx.stroke();
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(i, (i < 10 ? x - 10 : x - 13), yPicoBase + 17);
+
+        if (nodoSeleccionado && nodoSeleccionado.id === 'R' + i) {
+          ctx.fillStyle = '#ffd700';
+          ctx.beginPath();
+          ctx.arc(x, yPicoBase + 10, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // --- DIBUJO DE TERMINALES T INFERIORES ---
+      SALIDAS_T.forEach(st => {
+        let x = getX(st.slot);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(st.label, x - 5, yTerminals + 15);
+
+        if (nodoSeleccionado && nodoSeleccionado.id === st.id) {
+          ctx.strokeStyle = '#ffd700';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(x, yTerminals, 7, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      });
+
+      // --- CONEXIONES REALIZADAS CON SEPARACIÓN Y DESFASE ---
+      conexionesUsuario.forEach((conn, idx) => {
+        const nA = NODOS[conn.from];
+        const nB = NODOS[conn.to];
+        const cfg = CONFIG_FASE[conn.fase];
+        const geom = calcularGeometriaTrazo(nA, nB, idx);
+
+        ctx.strokeStyle = cfg.color;
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash(cfg.dash);
+
+        ctx.beginPath();
+
+        if (nA.type === 'slot' && nB.type === 'slot') {
+          const xA = nA.x + geom.xOffsetA;
+          const xB = nB.x + geom.xOffsetB;
+          const yBottom = geom.yLevel;
+
+          ctx.moveTo(nA.x, yPicoBase + 22);
+          ctx.lineTo(xA, yBottom);
+          ctx.lineTo(xB, yBottom);
+          ctx.lineTo(nB.x, yPicoBase + 22);
+        } else {
+          const slotNode = (nA.type === 'slot') ? nA : nB;
+          const termNode = (nA.type === 'terminal') ? nA : nB;
+
+          ctx.moveTo(slotNode.x, yPicoBase + 22);
+          ctx.lineTo(termNode.x, termNode.y);
+        }
+
+        ctx.stroke();
+      });
+
+      ctx.setLineDash([]);
+    }
+
+    function setPhase(fase, el) {
+      faseActual = fase;
+      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      let nodoEncontrado = null;
+
+      Object.values(NODOS).forEach(n => {
+        const d = Math.hypot(n.x - clickX, n.y - clickY);
+        if (d < 18) {
+          nodoEncontrado = n;
+        }
+      });
+
+      if (!nodoEncontrado) return;
+
+      if (!nodoSeleccionado) {
+        nodoSeleccionado = nodoEncontrado;
+      } else {
+        if (nodoSeleccionado.id !== nodoEncontrado.id) {
+          conexionesUsuario.push({
+            from: nodoSeleccionado.id,
+            to: nodoEncontrado.id,
+            fase: faseActual
+          });
+        }
+        nodoSeleccionado = null;
+      }
+
+      dibujarDiagramaBase();
+    });
+
+    function deshacerUltimo() {
+      conexionesUsuario.pop();
+      nodoSeleccionado = null;
+      dibujarDiagramaBase();
+    }
+
+    function limpiarTrazos() {
+      conexionesUsuario = [];
+      nodoSeleccionado = null;
+      dibujarDiagramaBase();
+    }
+
+    function validarEjercicio() {
+      if (conexionesUsuario.length === 0) {
+        alert("⚠️ Realiza al menos una conexión antes de verificar.");
+        return;
+      }
+      alert(`✅ Se han registrado ${conexionesUsuario.length} conexión(es) de bobinado correctamente.`);
+    }
+
+    dibujarDiagramaBase();
+  </script>
+</body>
+</html>

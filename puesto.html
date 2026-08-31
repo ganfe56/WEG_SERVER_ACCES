@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puesto de Bobinado — WEG</title>
+  <style>
+    :root {
+      --bg-dark: #001E36;
+      --bg-card: #012647;
+      --blue-main: #00579D;
+      --blue-accent: #57B7DC;
+      --gold-accent: #C9A66B;
+      --text-light: #F4F7FB;
+      --text-muted: #A4D8E3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      height: 60px;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0, 30, 54, 0.9);
+    }
+    .brand { font-weight: bold; font-size: 1.2rem; }
+    .nav-info { font-size: 0.9rem; color: var(--text-muted); }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .puesto-banner {
+      background: var(--bg-card);
+      border: 1px solid rgba(87, 183, 220, 0.2);
+      border-left: 5px solid var(--blue-accent);
+      padding: 1.5rem 2rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+
+    .puesto-banner .tag {
+      color: var(--gold-accent);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .puesto-banner h1 {
+      font-size: 2rem;
+      margin-top: 0.25rem;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card-module {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .card-module:hover {
+      transform: translateY(-3px);
+      border-color: var(--blue-accent);
+    }
+
+    .card-module h3 {
+      font-size: 1.2rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-module p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+
+    .btn-action {
+      display: inline-block;
+      text-align: center;
+      background: var(--blue-main);
+      color: #fff;
+      text-decoration: none;
+      padding: 0.7rem 1rem;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .btn-action:hover { background: #0068ba; }
+
+    footer {
+      height: 50px;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">WEG</div>
+    <div class="nav-info">Área de Bobinado · Capacitación</div>
+  </header>
+
+  <main>
+    <div class="puesto-banner">
+      <div class="tag">Puesto de Trabajo</div>
+      <h1 id="puesto-titulo">Cargando puesto...</h1>
+    </div>
+
+    <h2 style="margin-bottom: 1rem; font-size: 1.3rem;">Módulos de Capacitación Asignados</h2>
+    <div class="modules-grid" id="modulos-container">
+      </div>
+  </main>
+
+  <footer>WEG México · Planta Motores</footer>
+
+  <script>
+    // Datos de capacitación por puesto de trabajo (Bobinado)
+    const DATOS_PUESTOS = {
+      "bobinado-aislado": {
+        titulo: "Puesto 1: Aislado de Ranuras",
+        modulos: [
+          { titulo: "Aislamiento Térmico y Clase H", desc: "Selección y colocación de papel aislante de ranura.", link: "/curso" },
+          { titulo: "Corte y Conformado de Aislantes", desc: "Uso de guillotina y medidas estándar de ranura.", link: "#" }
+        ]
+      },
+      "bobinado-conexion": {
+        titulo: "Puesto 2: Conexión de Estatores",
+        modulos: [
+          { titulo: "Esquemas de Conexión Serie/Paralelo", desc: "Lectura de diagramas de bobinas y terminales.", link: "/curso" },
+          { titulo: "Soldadura e Aislamiento de Empalmes", desc: "Técnicas de estañado y manga termoencogible.", link: "#" }
+        ]
+      },
+      "bobinado-impregnacion": {
+        titulo: "Puesto 3: Impregnación / Barnizado",
+        modulos: [
+          { titulo: "Proceso VPI y Curado", desc: "Control de viscosidad, temperatura y ciclos de horneado.", link: "/curso" },
+          { titulo: "Seguridad y Manejo de Resinas", desc: "Uso de EPP específico y protocolos de ventilación.", link: "#" }
+        ]
+      },
+      "bobinado-encarte": {
+        titulo: "Puesto 4: Encarte y Conformado",
+        modulos: [
+          { titulo: "Inserción Manual y Mecánica de Bobinas", desc: "Técnicas para prevenir el raspado del esmalte de cobre.", link: "/curso" },
+          { titulo: "Conformado de Cabezales", desc: "Ajuste dimensional del cabezal de bobinado.", link: "#" }
+        ]
+      },
+      "bobinado-pruebas": {
+        titulo: "Puesto 5: Pruebas Eléctricas y Control",
+        modulos: [
+          { titulo: "Prueba Surge Test y HIPOT", desc: "Detección de cortos entre espiras y rigidez dieléctrica.", link: "/curso" },
+          { titulo: "Resistencia de Aislamiento (Megóhmetro)", desc: "Medición de resistencia y registro de calidad.", link: "#" }
+        ]
+      }
+    };
+
+    // Obtener ID del puesto desde la URL
+    const urlPath = window.location.pathname.split('/');
+    const idPuesto = urlPath[urlPath.length - 1];
+
+    const puestoInfo = DATOS_PUESTOS[idPuesto] || {
+      titulo: "Puesto de Trabajo no especificado",
+      modulos: [{ titulo: "Curso Base de Bobinado", desc: "Módulo general de inducción.", link: "/curso" }]
+    };
+
+    // Renderizar datos en pantalla
+    document.getElementById('puesto-titulo').textContent = puestoInfo.titulo;
+
+    const container = document.getElementById('modulos-container');
+    container.innerHTML = puestoInfo.modulos.map(m => `
+      <div class="card-module">
+        <div>
+          <h3>${m.titulo}</h3>
+          <p>${m.desc}</p>
+        </div>
+        <a href="${m.link}" class="btn-action">Iniciar Capacitación</a>
+      </div>
+    `).join('');
+  </script>
+</body>
+</html>

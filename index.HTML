@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Conceptos eléctricos · 01 — ¿Qué es la electricidad?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SISTEMA DE DISEÑO WEG MÉXICO  —  tokens compartidos
+   Layout: HORIZONTAL 16:9 (pantalla del Modelo B)
+   ============================================================ */
+:root{
+  --weg:#00579D; --weg-deep:#003A6B; --weg-ink:#012647;
+  --sky:#0075B1; --sky-2:#57B7DC; --sky-3:#A4D8E3; --sky-4:#D5EDFA;
+  --sand:#C9A66B; --paper:#F4F7FB; --white:#FFFFFF;
+  --line:rgba(1,38,71,.12); --ok:#1E9E6A; --ok-soft:#E4F5EE;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:#000;color:var(--weg-ink);
+  font-family:"Inter",system-ui,sans-serif;line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow:hidden;
+  position:relative;
+}
+
+/* Puntero virtual del Trackpad */
+#virtual-cursor {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background-color: var(--sky);
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 99999;
+  box-shadow: 0 0 12px rgba(0, 117, 177, 0.9);
+  transition: transform 0.05s ease-out, background-color 0.2s;
+}
+#virtual-cursor.clicking {
+  transform: translate(-50%, -50%) scale(0.6);
+  background-color: var(--sky-2);
+}
+
+/* Lienzo apaisado: llena la pantalla */
+.app{
+  width:100vw;height:100dvh;background:var(--paper);
+  display:flex;flex-direction:column;position:relative;overflow:hidden;
+}
+
+/* ---------- Topbar ---------- */
+.topbar{
+  background:var(--weg);color:#fff;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:clamp(8px,1.4vh,14px) clamp(18px,2.4vw,34px);
+}
+.weglogo{height:clamp(18px,2.6vh,26px);width:auto;display:block;color:#fff}
+.topbar .tb-right{display:flex;align-items:center;gap:clamp(14px,2vw,26px)}
+.topbar .meta{
+  font-family:"Space Mono",monospace;font-size:clamp(9px,1.15vw,12px);
+  text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.85);
+}
+/* progreso en la topbar (compacto, horizontal) */
+.dots{display:flex;gap:6px;align-items:center;width:clamp(120px,16vw,240px)}
+.dot{height:5px;border-radius:999px;background:rgba(255,255,255,.28);flex:1;transition:background .35s ease}
+.dot.done{background:rgba(255,255,255,.6)}
+.dot.active{background:var(--sky-2)}
+
+/* ---------- Escenario ---------- */
+.stage{flex:1 1 auto;position:relative;min-height:0}
+.step{
+  position:absolute;inset:0;overflow:hidden;
+  padding:clamp(16px,3vh,34px) clamp(22px,3.4vw,54px);
+  opacity:0;transform:translateY(12px);pointer-events:none;
+  transition:opacity .5s ease,transform .55s ease;
+}
+.step.on{opacity:1;transform:none;pointer-events:auto}
+.step[data-kind="portada"],.step[data-kind="cierre"]{background:var(--weg-ink)}
+@media (prefers-reduced-motion:reduce){.step{transition:opacity .2s ease;transform:none}}
+
+/* ---------- Tipografía ---------- */
+.eyebrow{
+  font-family:"Space Mono",monospace;font-size:clamp(10px,1.15vw,13px);
+  text-transform:uppercase;letter-spacing:.16em;color:var(--weg);
+  display:flex;align-items:center;gap:9px;margin-bottom:clamp(8px,1.6vh,16px);
+}
+.eyebrow::before{content:"";width:26px;height:2px;background:var(--weg);display:inline-block;flex:0 0 auto}
+.eyebrow.on-dark{color:var(--sky-2)}.eyebrow.on-dark::before{background:var(--sky-2)}
+h1.big{
+  font-family:"Archivo",sans-serif;font-weight:800;
+  font-size:clamp(34px,5.2vw,68px);line-height:1.0;letter-spacing:-.02em;margin:0;color:var(--weg-ink);
+}
+h1.big .l2{display:block;color:var(--sky-2)}
+h2.sec{
+  font-family:"Archivo",sans-serif;font-weight:700;
+  font-size:clamp(22px,2.9vw,40px);line-height:1.08;letter-spacing:-.01em;margin:0 0 clamp(6px,1.2vh,14px);color:var(--weg-ink);
+}
+.deck{color:rgba(1,38,71,.72);font-size:clamp(15px,1.6vw,21px);margin:clamp(10px,1.6vh,18px) 0 0}
+
+/* ============================================================
+   PORTADA (dark, dos columnas)
+   ============================================================ */
+.p-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,60px);align-items:center;height:100%}
+.p-left h1.big{color:#fff}
+.p-left .eyebrow{color:var(--sky-2)}.p-left .eyebrow::before{background:var(--sky-2)}
+.p-left .deck{color:rgba(255,255,255,.82)}
+.p-stamp{
+  margin-top:clamp(16px,3vh,30px);font-family:"Space Mono",monospace;
+  font-size:clamp(10px,1.1vw,13px);text-transform:uppercase;letter-spacing:.14em;
+  color:var(--sky-2);display:flex;gap:clamp(16px,2.4vw,30px);flex-wrap:wrap;
+}
+.p-stamp span{color:rgba(255,255,255,.55)}
+.p-right{display:flex;align-items:center;justify-content:center;height:100%;position:relative}
+.p-right svg{width:100%;height:auto;max-height:74vh}
+
+/* ============================================================
+   MOMENTO (dos columnas: avatar | apoyo)
+   ============================================================ */
+.m-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:clamp(20px,3vw,44px);height:100%}
+.m-left{min-height:0;display:flex}
+.avatar-stage{
+  position:relative;width:100%;height:100%;
+  background:linear-gradient(160deg,#013a68,#012647);
+  border-radius:18px;overflow:hidden;border:1px solid rgba(87,183,220,.25);
+}
+.avatar-stage video{width:100%;height:100%;object-fit:cover;display:block}
+.avatar-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px}
+.avatar-ph .sil{width:clamp(64px,7vw,96px);height:clamp(64px,7vw,96px);color:var(--sky-2);opacity:.9}
+.avatar-ph .tag{font-family:"Space Mono",monospace;font-size:clamp(10px,1.1vw,13px);letter-spacing:.14em;text-transform:uppercase;color:var(--sky-2)}
+.avatar-ph .note{font-size:clamp(12px,1.25vw,15px);color:rgba(255,255,255,.6);max-width:280px}
+.avatar-stage::after{content:"";position:absolute;left:0;bottom:0;width:100%;height:42%;background:linear-gradient(transparent,rgba(1,38,71,.5));pointer-events:none}
+
+.m-right{min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.m-figure{
+  flex:0 0 auto;background:var(--white);border:1px solid var(--line);border-radius:14px;
+  padding:clamp(10px,1.6vh,18px);margin:clamp(8px,1.4vh,14px) 0;
+  display:flex;align-items:center;justify-content:center;
+}
+.m-figure svg{width:100%;height:auto;max-height:26vh;display:block}
+.guion{
+  flex:1 1 auto;min-height:0;overflow-y:auto;
+  background:var(--white);border:1px solid var(--line);border-radius:14px;padding:clamp(12px,1.8vh,18px);
+}
+.guion .glbl{
+  font-family:"Space Mono",monospace;font-size:clamp(9px,1vw,12px);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--weg);margin-bottom:10px;display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--white);
+}
+.guion .glbl svg{width:13px;height:13px;color:var(--weg);flex:0 0 auto}
+.guion p{margin:0 0 10px;color:rgba(1,38,71,.82);font-size:clamp(13px,1.4vw,17px);line-height:1.5}
+
+/* ============================================================
+   EJERCICIO (izq: consigna | der: circuito)
+   ============================================================ */
+.e-grid{display:grid;grid-template-columns:.82fr 1.18fr;gap:clamp(20px,3vw,44px);height:100%;align-items:stretch}
+.e-left{min-height:0;display:flex;flex-direction:column;overflow-y:auto}
+.ex-instr{
+  background:var(--sky-4);border:1px solid rgba(0,87,157,.18);border-radius:12px;
+  padding:clamp(12px,1.8vh,18px);margin-top:clamp(8px,1.4vh,14px);
+  font-size:clamp(13px,1.4vw,17px);color:var(--weg-deep);line-height:1.5;
+}
+.ex-instr b{color:var(--weg)}
+.ex-status{border-radius:12px;padding:clamp(12px,1.8vh,18px);margin-top:14px;font-size:clamp(13px,1.35vw,16px);display:none;align-items:flex-start;gap:10px}
+.ex-status.show{display:flex}
+.ex-status.ok{background:var(--ok-soft);color:#0f6b45;border:1px solid rgba(30,158,106,.3)}
+.ex-status.ok svg{width:20px;height:20px;flex:0 0 auto;color:var(--ok)}
+.ex-status strong{color:#0f6b45}
+
+.e-right{min-height:0;display:flex;flex-direction:column}
+.circuit-wrap{
+  flex:1 1 auto;min-height:0;background:var(--white);border:1px solid var(--line);border-radius:16px;
+  padding:clamp(10px,1.6vh,18px);display:flex;align-items:center;justify-content:center;
+}
+.circuit-wrap svg{width:100%;height:100%;max-height:100%;display:block;touch-action:none}
+.cable-tray{display:flex;align-items:center;justify-content:center;gap:12px;padding:clamp(8px,1.4vh,14px) 0 4px;min-height:56px}
+.cable{
+  touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;
+  width:clamp(110px,11vw,150px);height:clamp(30px,3.6vh,40px);border-radius:999px;position:relative;
+  background:linear-gradient(180deg,#c98a3c,#a96f28);
+  box-shadow:inset 0 2px 3px rgba(255,255,255,.35),0 6px 14px -6px rgba(169,111,40,.8);
+  display:flex;align-items:center;justify-content:center;
+}
+.cable::before,.cable::after{content:"";position:absolute;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:#7d5a2a;box-shadow:inset 0 1px 2px rgba(0,0,0,.4)}
+.cable::before{left:-5px}.cable::after{right:-5px}
+.cable .cu{font-family:"Space Mono",monospace;font-size:clamp(9px,1vw,11px);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.92)}
+.cable.dragging{cursor:grabbing;opacity:.92;z-index:30}
+.cable.placed{cursor:default}
+.tray-hint{font-family:"Space Mono",monospace;font-size:clamp(9px,1vw,11px);letter-spacing:.1em;text-transform:uppercase;color:rgba(1,38,71,.45);text-align:center}
+
+/* ============================================================
+   CIERRE (dark, título arriba + tarjetas en fila)
+   ============================================================ */
+.c-wrap{height:100%;display:flex;flex-direction:column;justify-content:center;max-width:1100px;margin:0 auto;width:100%}
+.c-wrap .eyebrow{color:var(--sky-2)}.c-wrap .eyebrow::before{background:var(--sky-2)}
+.c-wrap h2{font-family:"Archivo";font-weight:800;font-size:clamp(26px,3.6vw,50px);letter-spacing:-.02em;margin:0 0 6px;color:#fff}
+.c-wrap .deck{color:rgba(255,255,255,.8)}
+.c-cards{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.4vw,28px);margin-top:clamp(18px,3vh,32px)}
+.msg-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:clamp(16px,2.4vh,26px);display:flex;gap:14px}
+.msg-card .dot-c{width:11px;height:11px;border-radius:50%;margin-top:6px;flex:0 0 auto}
+.msg-card h3{font-family:"Archivo";font-weight:700;font-size:clamp(16px,1.9vw,24px);margin:0 0 6px;color:#fff}
+.msg-card p{margin:0;font-size:clamp(13px,1.45vw,18px);color:rgba(255,255,255,.75);line-height:1.5}
+
+/* ---------- Navegación inferior ---------- */
+.navbar{
+  flex:0 0 auto;background:var(--white);border-top:1px solid var(--line);
+  padding:clamp(10px,1.6vh,16px) clamp(22px,3.4vw,54px) calc(clamp(10px,1.6vh,16px) + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:12px;
+}
+.btn{
+  font-family:"Archivo",sans-serif;font-weight:700;font-size:clamp(14px,1.5vw,18px);
+  border:none;border-radius:999px;padding:clamp(12px,1.6vh,17px) clamp(22px,3vw,40px);cursor:pointer;
+  transition:transform .12s ease,box-shadow .2s ease,background .2s ease;-webkit-tap-highlight-color:transparent;
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--weg);color:#fff;box-shadow:0 10px 22px -12px rgba(0,87,157,.9);min-width:clamp(140px,16vw,220px)}
+.btn-primary:disabled{background:#9db6cc;box-shadow:none;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--weg);border:1.5px solid var(--line);margin-right:auto}
+.btn-ghost:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible{outline:3px solid var(--sky-2);outline-offset:2px}
+.nav-title{margin-right:auto;font-family:"Space Mono",monospace;font-size:clamp(9px,1vw,12px);letter-spacing:.12em;text-transform:uppercase;color:rgba(1,38,71,.5);align-self:center}
+
+/* electrones fluyendo */
+@keyframes flowDash{to{stroke-dashoffset:-1000}}
+.wire-flow{stroke-dasharray:5 13;stroke-dashoffset:0;animation:flowDash 6s linear infinite}
+@media (prefers-reduced-motion:reduce){.wire-flow{animation:none}}
+
+/* ---------- Fallback vertical (tablet en retrato): apila ---------- */
+@media (max-aspect-ratio:1/1){
+  .p-grid,.m-grid,.e-grid{grid-template-columns:1fr;align-content:start;overflow-y:auto}
+  .c-cards{grid-template-columns:1fr}
+  .p-right svg{max-height:34vh}
+  .m-figure svg{max-height:20vh}
+  .avatar-stage{aspect-ratio:16/10;height:auto}
+  .step{overflow-y:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- Puntero Virtual -->
+<div id="virtual-cursor"></div>
+
+<div class="app" id="app">
+
+  <!-- Topbar con progreso integrado -->
+  <div class="topbar">
+    <svg class="weglogo" viewBox="0 0 13 9" xmlns="http://www.w3.org/2000/svg" fill="currentColor" role="img" aria-label="WEG"><rect x="0" y="0" width="13" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="3" height="1"/><rect x="10" y="2" width="3" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="12" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="3" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="12" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="12" y="5" width="1" height="1"/><rect x="0" y="6" width="5" height="1"/><rect x="6" y="6" width="3" height="1"/><rect x="10" y="6" width="3" height="1"/><rect x="12" y="7" width="1" height="1"/><rect x="0" y="8" width="13" height="1"/></svg>
+    <div class="tb-right">
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <span class="meta" id="meta-rev">MC 01</span>
+    </div>
+  </div>
+
+  <!-- Escenario -->
+  <div class="stage" id="stage"></div>
+
+  <!-- Navegación -->
+  <div class="navbar">
+    <button class="btn btn-ghost" id="btn-back">Atrás</button>
+    <span class="nav-title" id="nav-title"></span>
+    <button class="btn btn-primary" id="btn-next">Comenzar</button>
+  </div>
+
+</div>
+<script src="/socket.io/socket.io.js"></script>
+  <script>
+    /* ============================================================
+       CONTENIDO — Fuente de verdad editable
+       ============================================================ */
+    const CONTENIDO = {
+      meta:{curso:"Conceptos eléctricos",microcurso:"¿Qué es la electricidad?",numero:"01",revision:"REV. A",unidad:"WEG México · Motores"},
+      portada:{eyebrow:"Conceptos eléctricos · Módulo 01",titulo:"¿Qué es",titulo2:"la electricidad?",deck:"En unos minutos vas a entender qué es realmente la electricidad y por qué es el corazón de lo que haces en planta.",duracion:"≈ 4 MIN",cta:"Comenzar"},
+      momentos:[
+        {etiqueta:"Momento 1 · El gancho",titulo:"Ya la conoces",video:null,visual:"gancho",
+         guion:["Hola. Déjame empezar con algo que ya conoces, aunque no lo hayas pensado así.","Cuando prendes la luz de tu casa… cuando pones a cargar tu celular… cuando arranca un motor aquí en la planta… en todos pasa exactamente lo mismo.","Hay electricidad trabajando. Y hoy vas a entender, en pocos minutos, qué es realmente."]},
+        {etiqueta:"Momento 2 · Qué pasa por dentro",titulo:"Es movimiento",video:null,visual:"electrones",
+         guion:["Todo lo que tocas está hecho de partículas muy, muy pequeñas. Tan pequeñas que no las puedes ver.","Algunas de esas partículas se llaman electrones. Y lo importante es que se pueden mover.","Cuando muchos electrones se mueven juntos, en la misma dirección, por dentro de un material… a eso le llamamos corriente eléctrica.","Eso es la electricidad. No es magia. Es movimiento: electrones viajando por un camino."]},
+        {etiqueta:"Momento 3 · Por qué te importa",titulo:"Tu trabajo, por dentro",video:null,visual:"cobre",
+         guion:["¿Y esto qué tiene que ver con tu trabajo? Todo.","En un motor, esos electrones viajan por el alambre de cobre. El mismo alambre que se bobina aquí, en la planta.","Si los electrones fluyen bien, el motor gira. Si algo interrumpe su camino, el motor falla.","Por eso lo que tú haces importa tanto. Ahora vamos a comprobarlo, tú y yo, con un ejercicio."]}
+      ],
+      ejercicio:{etiqueta:"Ejercicio · Conecta el flujo",titulo:"Cierra el camino",instruccion:"Arrastra el tramo de <b>cable de cobre</b> hasta el hueco del circuito. Cuando el camino quede completo, los electrones van a fluir y el foco se va a encender.",exitoTitulo:"¡Camino completo!",exitoTexto:"Los electrones ahora fluyen sin interrupción y el foco enciende. Eso es exactamente lo que buscas en un motor: un camino continuo para la corriente."},
+      cierre:{eyebrow:"Lo que te llevas",titulo:"La electricidad es movimiento",deck:"Un solo concepto, y sostiene todo el curso.",
+        tarjetas:[{color:"#57B7DC",titulo:"La idea clave",texto:"La electricidad es el movimiento de electrones por un camino. Sin camino completo, no hay corriente."},{color:"#C9A66B",titulo:"En tu trabajo",texto:"Ese camino es el alambre de cobre que bobinas. Cuidar la continuidad es cuidar que el motor funcione."}]}
+    };
+
+    /* ============================================================
+       VISUALES VECTORIALES (SVG)
+       ============================================================ */
+    const AR='preserveAspectRatio="xMidYMid meet"';
+    const SVG={
+      hero(){return `
+        <svg viewBox="0 0 360 320" ${AR} role="img" aria-label="Bombilla con electrones fluyendo">
+          <defs>
+            <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+              <stop offset="0%" stop-color="#57B7DC" stop-opacity=".55"/>
+              <stop offset="100%" stop-color="#57B7DC" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="180" cy="140" r="150" fill="url(#glow)"/>
+          <circle cx="180" cy="130" r="72" fill="#012647" stroke="#57B7DC" stroke-width="3"/>
+          <circle cx="180" cy="130" r="72" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="10"/>
+          <path d="M158 150 Q180 92 202 150" fill="none" stroke="#C9A66B" stroke-width="6" stroke-linecap="round"/>
+          <rect x="164" y="200" width="32" height="24" rx="4" fill="#003A6B"/>
+          <line x1="168" y1="230" x2="192" y2="230" stroke="#003A6B" stroke-width="5" stroke-linecap="round"/>
+          <line x1="170" y1="240" x2="190" y2="240" stroke="#003A6B" stroke-width="5" stroke-linecap="round"/>
+          <g fill="#57B7DC">
+            <circle r="7"><animateMotion dur="4s" repeatCount="indefinite" path="M180 40 A90 90 0 1 1 179 40 Z"/></circle>
+            <circle r="6" fill="#A4D8E3"><animateMotion dur="4s" begin="-1.3s" repeatCount="indefinite" path="M180 40 A90 90 0 1 1 179 40 Z"/></circle>
+            <circle r="7"><animateMotion dur="4s" begin="-2.6s" repeatCount="indefinite" path="M180 40 A90 90 0 1 1 179 40 Z"/></circle>
+          </g>
+        </svg>`;},
+      gancho(){return `
+        <svg viewBox="0 0 300 150" ${AR} role="img" aria-label="Objetos cotidianos que usan electricidad">
+          <g transform="translate(48,44)">
+            <circle cx="0" cy="0" r="26" fill="#D5EDFA" stroke="#00579D" stroke-width="2.5"/>
+            <path d="M-9 6 Q0 -14 9 6" fill="none" stroke="#C9A66B" stroke-width="3" stroke-linecap="round"/>
+            <rect x="-7" y="24" width="14" height="10" rx="2" fill="#003A6B"/>
+            <line x1="-6" y1="38" x2="6" y2="38" stroke="#003A6B" stroke-width="2.5" stroke-linecap="round"/>
+            <text x="0" y="60" text-anchor="middle" font-family="Space Mono,monospace" font-size="9" fill="#00579D" letter-spacing="1">LUZ</text>
+          </g>
+          <g transform="translate(150,26)">
+            <rect x="-18" y="0" width="36" height="66" rx="7" fill="#012647"/>
+            <rect x="-14" y="6" width="28" height="46" rx="3" fill="#57B7DC"/>
+            <path d="M-4 24 l6 0 -3 8 6 0 -8 12 3 -12 -6 0 z" fill="#fff"/>
+            <circle cx="0" cy="59" r="2.5" fill="#57B7DC"/>
+            <text x="0" y="82" text-anchor="middle" font-family="Space Mono,monospace" font-size="9" fill="#00579D" letter-spacing="1">CELULAR</text>
+          </g>
+          <g transform="translate(248,42)">
+            <rect x="-30" y="-16" width="52" height="40" rx="6" fill="#00579D" stroke="#003A6B" stroke-width="2"/>
+            <line x1="-24" y1="-16" x2="-24" y2="24" stroke="#003A6B" stroke-width="1.5"/>
+            <line x1="-16" y1="-16" x2="-16" y2="24" stroke="#003A6B" stroke-width="1.5"/>
+            <line x1="-8" y1="-16" x2="-8" y2="24" stroke="#003A6B" stroke-width="1.5"/>
+            <circle cx="-2" cy="4" r="11" fill="#012647"/><circle cx="-2" cy="4" r="4" fill="#57B7DC"/>
+            <rect x="22" y="-3" width="14" height="14" rx="3" fill="#003A6B"/>
+            <text x="-2" y="40" text-anchor="middle" font-family="Space Mono,monospace" font-size="9" fill="#00579D" letter-spacing="1">MOTOR</text>
+          </g>
+          <g stroke="#C9A66B" stroke-width="2" stroke-linecap="round" opacity=".8">
+            <line x1="84" y1="112" x2="96" y2="112"/><line x1="108" y1="112" x2="120" y2="112"/>
+            <line x1="184" y1="112" x2="196" y2="112"/><line x1="208" y1="112" x2="220" y2="112"/>
+          </g>
+          <text x="150" y="140" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="#003A6B" letter-spacing="2">LA MISMA ELECTRICIDAD</text>
+        </svg>`;},
+      electrones(){return `
+        <svg viewBox="0 0 300 130" ${AR} role="img" aria-label="Electrones moviéndose por un alambre">
+          <rect x="20" y="50" width="260" height="30" rx="15" fill="#F4F7FB" stroke="#A4D8E3" stroke-width="2"/>
+          <line x1="30" y1="65" x2="270" y2="65" stroke="#57B7DC" stroke-width="3" stroke-linecap="round" class="wire-flow"/>
+          <g fill="#00579D">
+            <circle cx="55" cy="65" r="7"><animate attributeName="cx" from="30" to="285" dur="2.6s" repeatCount="indefinite"/></circle>
+            <circle cx="120" cy="65" r="7"><animate attributeName="cx" from="30" to="285" dur="2.6s" begin="-0.9s" repeatCount="indefinite"/></circle>
+            <circle cx="190" cy="65" r="7"><animate attributeName="cx" from="30" to="285" dur="2.6s" begin="-1.7s" repeatCount="indefinite"/></circle>
+          </g>
+          <g fill="#57B7DC">
+            <circle cx="85" cy="65" r="5"><animate attributeName="cx" from="30" to="285" dur="2.6s" begin="-0.4s" repeatCount="indefinite"/></circle>
+            <circle cx="230" cy="65" r="5"><animate attributeName="cx" from="30" to="285" dur="2.6s" begin="-2.1s" repeatCount="indefinite"/></circle>
+          </g>
+          <polygon points="272,58 284,65 272,72" fill="#00579D"/>
+          <text x="150" y="112" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="#003A6B" letter-spacing="2">ELECTRONES = CORRIENTE</text>
+        </svg>`;},
+      cobre(){
+        const cx=150,cy=76;
+        let d='';const steps=220,turns=3.15,r0=25,r1=55;
+        for(let i=0;i<=steps;i++){
+          const t=i/steps,a=t*turns*2*Math.PI-Math.PI/2,r=r0+(r1-r0)*t;
+          d+=(i?'L':'M')+(cx+r*Math.cos(a)).toFixed(1)+' '+(cy+r*Math.sin(a)).toFixed(1)+' ';
+        }
+        d=d.trim();
+        const slots=Array.from({length:12},(_,k)=>{
+          const a=k/12*2*Math.PI;
+          return `<line x1="${(cx+59*Math.cos(a)).toFixed(1)}" y1="${(cy+59*Math.sin(a)).toFixed(1)}" x2="${(cx+64*Math.cos(a)).toFixed(1)}" y2="${(cy+64*Math.sin(a)).toFixed(1)}"/>`;
+        }).join('');
+        return `
+        <svg viewBox="0 0 300 165" ${AR} role="img" aria-label="Cobre bobinado en un motor con electrones fluyendo">
+          <circle cx="${cx}" cy="${cy}" r="64" fill="none" stroke="#003A6B" stroke-width="3"/>
+          <g stroke="#003A6B" stroke-width="2" opacity=".5">${slots}</g>
+          <path d="${d}" fill="none" stroke="#C9A66B" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="${cx}" cy="${cy}" r="20" fill="#012647"/>
+          <circle cx="${cx}" cy="${cy}" r="7" fill="#57B7DC"/>
+          <g>
+            <circle r="4.5" fill="#00579D"><animateMotion dur="4.5s" repeatCount="indefinite" path="${d}"/></circle>
+            <circle r="4.5" fill="#0075B1"><animateMotion dur="4.5s" begin="-1.5s" repeatCount="indefinite" path="${d}"/></circle>
+            <circle r="4.5" fill="#00579D"><animateMotion dur="4.5s" begin="-3s" repeatCount="indefinite" path="${d}"/></circle>
+          </g>
+          <text x="150" y="158" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="#003A6B" letter-spacing="1.5">COBRE BOBINADO = CAMINO DEL MOTOR</text>
+        </svg>`;}
+    };
+
+    const MIC=`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Zm7 10a7 7 0 0 1-14 0H3a9 9 0 0 0 8 8.94V24h2v-3.06A9 9 0 0 0 21 12Z"/></svg>`;
+    const SIL=`<svg class="sil" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-9 2-9 6v2h18v-2c0-4-5-6-9-6Z"/></svg>`;
+
+    /* ============================================================
+       RENDER DE DIAPOSITIVAS
+       ============================================================ */
+    const stage=document.getElementById('stage');
+    const C=CONTENIDO;const steps=[];
+
+    steps.push(`
+      <section class="step" data-kind="portada">
+        <div class="p-grid">
+          <div class="p-left">
+            <div class="eyebrow">${C.portada.eyebrow}</div>
+            <h1 class="big">${C.portada.titulo}<span class="l2">${C.portada.titulo2}</span></h1>
+            <p class="deck">${C.portada.deck}</p>
+            <div class="p-stamp"><div>${C.portada.duracion}</div><div><span>REVISIÓN</span> ${C.meta.revision}</div></div>
+          </div>
+          <div class="p-right">${SVG.hero()}</div>
+        </div>
+      </section>`);
+
+    C.momentos.forEach(m=>{
+      const video=m.video?`<video controls playsinline preload="metadata" src="${m.video}"></video>`
+        :`<div class="avatar-ph">${SIL}<div class="tag">Avatar · HeyGen</div><div class="note">Aquí va el video del instructor. Mientras tanto, el guion está a un lado.</div></div>`;
+      steps.push(`
+        <section class="step" data-kind="momento">
+          <div class="m-grid">
+            <div class="m-left"><div class="avatar-stage">${video}</div></div>
+            <div class="m-right">
+              <div class="eyebrow">${m.etiqueta}</div>
+              <h2 class="sec">${m.titulo}</h2>
+              <div class="m-figure">${SVG[m.visual]()}</div>
+              <div class="guion"><div class="glbl">${MIC} Guion del instructor</div>${m.guion.map(p=>`<p>${p}</p>`).join('')}</div>
+            </div>
+          </div>
+        </section>`);
+    });
+
+    steps.push(`
+      <section class="step" data-kind="ejercicio">
+        <div class="e-grid">
+          <div class="e-left">
+            <div class="eyebrow">${C.ejercicio.etiqueta}</div>
+            <h2 class="sec">${C.ejercicio.titulo}</h2>
+            <div class="ex-instr">${C.ejercicio.instruccion}</div>
+            <div class="ex-status ok" id="status">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+              <div><strong id="st-title"></strong><br><span id="st-text"></span></div>
+            </div>
+          </div>
+          <div class="e-right">
+            <div class="circuit-wrap">
+              <svg id="circuit" viewBox="0 0 320 210" ${AR} role="img" aria-label="Circuito eléctrico incompleto">
+                <path id="loop-path" d="M60 150 L60 70 L130 70 M190 70 L260 70 L260 150 L60 150" fill="none" stroke="#D5EDFA" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect id="gap" x="128" y="60" width="64" height="20" rx="6" fill="none" stroke="#00579D" stroke-width="2" stroke-dasharray="5 4"/>
+                <text id="gap-lbl" x="160" y="52" text-anchor="middle" font-family="Space Mono,monospace" font-size="9" fill="#00579D" letter-spacing="1">HUECO</text>
+                <path id="flow" d="M60 150 L60 70 L260 70 L260 150 L60 150" fill="none" stroke="#57B7DC" stroke-width="4" stroke-linecap="round" stroke-dasharray="6 12" stroke-dashoffset="0" opacity="0"/>
+                <g transform="translate(60,150)">
+                  <rect x="-16" y="-6" width="32" height="26" rx="3" fill="#012647"/><rect x="-6" y="-12" width="12" height="7" rx="2" fill="#012647"/>
+                  <line x1="-8" y1="6" x2="8" y2="6" stroke="#57B7DC" stroke-width="2"/><line x1="-8" y1="12" x2="8" y2="12" stroke="#57B7DC" stroke-width="2"/>
+                  <text x="0" y="36" text-anchor="middle" font-family="Space Mono,monospace" font-size="8" fill="#003A6B" letter-spacing="1">PILA</text>
+                </g>
+                <g transform="translate(260,150)" id="bulb">
+                  <circle id="bulb-glow" cx="0" cy="0" r="24" fill="#C9A66B" opacity="0"/>
+                  <circle cx="0" cy="0" r="16" fill="#F4F7FB" stroke="#003A6B" stroke-width="2.5"/>
+                  <path id="bulb-fil" d="M-6 4 Q0 -8 6 4" fill="none" stroke="#A4D8E3" stroke-width="2.5" stroke-linecap="round"/>
+                  <rect x="-5" y="15" width="10" height="7" rx="2" fill="#003A6B"/>
+                  <text x="0" y="36" text-anchor="middle" font-family="Space Mono,monospace" font-size="8" fill="#003A6B" letter-spacing="1">FOCO</text>
+                </g>
+              </svg>
+            </div>
+            <div class="cable-tray" id="tray">
+              <div class="cable" id="cable" role="button" tabindex="0" aria-label="Cable de cobre, arrástralo o haz doble clic para conectar"><span class="cu">Cu · Cobre</span></div>
+            </div>
+            <div class="tray-hint" id="hint">Arrástralo o haz doble clic para conectar</div>
+          </div>
+        </div>
+      </section>`);
+
+    steps.push(`
+      <section class="step" data-kind="cierre">
+        <div class="c-wrap">
+          <div class="eyebrow">${C.cierre.eyebrow}</div>
+          <h2>${C.cierre.titulo}</h2>
+          <p class="deck">${C.cierre.deck}</p>
+          <div class="c-cards">
+            ${C.cierre.tarjetas.map(t=>`<div class="msg-card"><span class="dot-c" style="background:${t.color}"></span><div><h3>${t.titulo}</h3><p>${t.texto}</p></div></div>`).join('')}
+          </div>
+        </div>
+      </section>`);
+
+    stage.innerHTML=steps.join('');
+    const stepEls=[...stage.querySelectorAll('.step')];
+
+    /* ============================================================
+       NAVEGACIÓN INTERFAZ
+       ============================================================ */
+    const dotsWrap=document.getElementById('dots');
+    const btnNext=document.getElementById('btn-next');
+    const btnBack=document.getElementById('btn-back');
+    const metaRev=document.getElementById('meta-rev');
+    const navTitle=document.getElementById('nav-title');
+    metaRev.textContent=`MC ${C.meta.numero} · ${C.meta.revision}`;
+
+    const contentSteps=C.momentos.length+1;
+    dotsWrap.innerHTML=Array.from({length:contentSteps},()=>'<span class="dot"></span>').join('');
+    const dotEls=[...dotsWrap.children];
+
+    let idx=0,exercisePassed=false;
+
+    function render(){
+      stepEls.forEach((el,i)=>el.classList.toggle('on',i===idx));
+      const kind=stepEls[idx].dataset.kind;
+      const contentIdx=idx-1;
+      dotEls.forEach((d,i)=>{d.classList.toggle('done',i<contentIdx);d.classList.toggle('active',i===contentIdx)});
+      if(kind==='cierre')dotEls.forEach(d=>d.classList.add('done'));
+
+      navTitle.textContent=(kind==='portada')?C.meta.curso
+        :(kind==='cierre')?'Microcurso completado'
+        :`${C.meta.curso} · ${contentIdx+1} de ${contentSteps}`;
+
+      btnBack.disabled=idx===0;
+      if(kind==='portada'){btnNext.textContent=C.portada.cta;btnNext.disabled=false;}
+      else if(kind==='ejercicio'){btnNext.textContent='Continuar';btnNext.disabled=!exercisePassed;}
+      else if(kind==='cierre'){btnNext.textContent='Reiniciar';btnNext.disabled=false;}
+      else{btnNext.textContent='Siguiente';btnNext.disabled=false;}
+    }
+
+    function go(n, fromRemote = false){
+      idx=Math.max(0,Math.min(stepEls.length-1,n));
+      render();
+      if(!fromRemote && typeof socket !== 'undefined'){
+        socket.emit('app-state-update', { type: 'navigate', payload: { step: idx }, currentIdx: idx, exercisePassed });
+      }
+    }
+
+    btnNext.addEventListener('click',()=>{
+      if(stepEls[idx].dataset.kind==='cierre'){exercisePassed=false;resetExercise();go(0);return;}
+      go(idx+1);
+    });
+    btnBack.addEventListener('click',()=>go(idx-1));
+
+    /* ============================================================
+       LÓGICA DEL EJERCICIO (ARRASTRE LOCAL Y REMOTO)
+       ============================================================ */
+    const cable=document.getElementById('cable');
+    const gap=document.getElementById('gap');
+    const flow=document.getElementById('flow');
+    const bulbGlow=document.getElementById('bulb-glow');
+    const bulbFil=document.getElementById('bulb-fil');
+    const statusBox=document.getElementById('status');
+    const hint=document.getElementById('hint');
+    let dragging=false, startX=0, startY=0, initialLeft=0, initialTop=0;
+
+    function handleDragStart(x, y) {
+      if(cable.classList.contains('placed')) return;
+      dragging = true;
+      cable.classList.add('dragging');
+      const rect = cable.getBoundingClientRect();
+      startX = x;
+      startY = y;
+      initialLeft = rect.left;
+      initialTop = rect.top;
+    }
+
+    function handleDragMove(x, y) {
+      if(!dragging) return;
+      const dx = x - startX;
+      const dy = y - startY;
+      cable.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+
+    function handleDragEnd() {
+      if(!dragging) return;
+      dragging = false;
+      cable.classList.remove('dragging');
+
+      const cr = cable.getBoundingClientRect();
+      const cx = cr.left + cr.width / 2;
+      const cy = cr.top + cr.height / 2;
+
+      const g = gap.getBoundingClientRect();
+      const tol = 50;
+
+      if(cx > g.left - tol && cx < g.right + tol && cy > g.top - tol && cy < g.bottom + tol) {
+        placeCable();
+      } else {
+        cable.style.transition = 'transform .25s ease';
+        cable.style.transform = 'translate(0,0)';
+        setTimeout(() => cable.style.transition = '', 260);
+      }
+    }
+
+    // Eventos Nativos del Mouse / Touch (Local)
+    cable.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      handleDragStart(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointermove', e => {
+      if(dragging) {
+        e.preventDefault();
+        handleDragMove(e.clientX, e.clientY);
+      }
+    });
+    window.addEventListener('pointerup', () => handleDragEnd());
+
+    cable.addEventListener('dblclick', e => {
+      e.preventDefault();
+      if(!cable.classList.contains('placed')) placeCable();
+    });
+
+    function placeCable(fromRemote = false){
+      if(cable.classList.contains('placed')) return;
+      cable.classList.add('placed');
+      cable.style.transition='transform .2s ease, opacity .3s ease';
+      cable.style.opacity='0';
+      if(hint) hint.style.display='none';
+      solveCircuit();
+      beep();
+      if(!fromRemote && typeof socket !== 'undefined'){
+        socket.emit('app-state-update', { type: 'exercise_completed', currentIdx: idx, exercisePassed: true });
+      }
+    }
+
+    function solveCircuit(){
+      exercisePassed=true;
+      gap.setAttribute('stroke','#C9A66B');gap.setAttribute('fill','#C9A66B');gap.setAttribute('stroke-dasharray','0');
+      const gl=document.getElementById('gap-lbl');if(gl)gl.style.opacity='0';
+      flow.style.opacity='1';flow.classList.add('wire-flow');
+      bulbFil.setAttribute('stroke','#C9A66B');bulbFil.setAttribute('stroke-width','3');
+      bulbGlow.style.transition='opacity .6s ease';bulbGlow.setAttribute('opacity','.55');
+      document.getElementById('st-title').textContent=C.ejercicio.exitoTitulo;
+      document.getElementById('st-text').textContent=C.ejercicio.exitoTexto;
+      statusBox.classList.add('show');render();
+    }
+
+    function resetExercise(){
+      if(!cable)return;
+      cable.classList.remove('placed');cable.style.transform='translate(0,0)';cable.style.opacity='1';cable.style.transition='';
+      if(hint) hint.style.display='';
+      gap.setAttribute('stroke','#00579D');gap.setAttribute('fill','none');gap.setAttribute('stroke-dasharray','5 4');
+      const gl=document.getElementById('gap-lbl');if(gl)gl.style.opacity='1';
+      flow.style.opacity='0';flow.classList.remove('wire-flow');
+      bulbFil.setAttribute('stroke','#A4D8E3');bulbFil.setAttribute('stroke-width','2.5');bulbGlow.setAttribute('opacity','0');
+      statusBox.classList.remove('show');
+    }
+
+    function beep(){
+      try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+        const ctx=new AC();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);
+        o.type='sine';o.frequency.setValueAtTime(660,ctx.currentTime);o.frequency.setValueAtTime(880,ctx.currentTime+.12);
+        g.gain.setValueAtTime(.001,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.25,ctx.currentTime+.03);
+        g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.4);o.start();o.stop(ctx.currentTime+.42);
+      }catch(_){}
+    }
+    render();
+
+    /* ============================================================
+       SOCKET.IO + CURSOR VIRTUAL CON ARRASTRE
+       ============================================================ */
+    const socket = io();
+    const cursor = document.getElementById('virtual-cursor');
+
+    let cursorX = window.innerWidth / 2;
+    let cursorY = window.innerHeight / 2;
+
+    function updateCursorPosition() {
+      if (!cursor) return;
+      cursor.style.left = `${cursorX}px`;
+      cursor.style.top = `${cursorY}px`;
+    }
+    updateCursorPosition();
+
+    // Teclado Físico
+    window.addEventListener('keydown', (e) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return;
+
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        if (!btnNext.disabled) btnNext.click();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        if (!btnBack.disabled) btnBack.click();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        if (stepEls[idx].dataset.kind === 'ejercicio' && !exercisePassed) {
+          e.preventDefault();
+          placeCable();
+        }
+      }
+    });
+
+    // Control Remoto por Sockets
+    socket.on('control-action', (data) => {
+      switch (data.action) {
+        case 'next':
+          if (idx < stepEls.length - 1 && !btnNext.disabled) go(idx + 1, true);
+          break;
+        case 'back':
+          if (idx > 0) go(idx - 1, true);
+          break;
+        case 'complete_exercise':
+          placeCable(true);
+          break;
+        case 'reset':
+          exercisePassed = false;
+          resetExercise();
+          go(0, true);
+          break;
+        case 'goto_step':
+          if (typeof data.step === 'number') go(data.step, true);
+          break;
+      }
+    });
+
+    socket.on('trackpad-move', (data) => {
+      if (data.isNormalized) {
+        cursorX = data.x * window.innerWidth;
+        cursorY = data.y * window.innerHeight;
+      } else {
+        cursorX += (data.dx || 0);
+        cursorY += (data.dy || 0);
+      }
+      cursorX = Math.max(0, Math.min(window.innerWidth, cursorX));
+      cursorY = Math.max(0, Math.min(window.innerHeight, cursorY));
+      updateCursorPosition();
+
+      // Transmite movimiento si se está realizando un drag remoto
+      if (dragging) {
+        handleDragMove(cursorX, cursorY);
+      }
+    });
+
+    socket.on('trackpad-down', () => {
+      if (cursor) cursor.classList.add('clicking');
+      const targetEl = document.elementFromPoint(cursorX, cursorY);
+      if (targetEl) {
+        const cableEl = targetEl.closest('#cable');
+        if (cableEl) {
+          handleDragStart(cursorX, cursorY);
+        }
+      }
+    });
+
+    socket.on('trackpad-up', () => {
+      if (cursor) cursor.classList.remove('clicking');
+      if (dragging) {
+        handleDragEnd();
+      }
+    });
+
+    socket.on('trackpad-click', () => {
+      if (cursor) {
+        cursor.classList.add('clicking');
+        setTimeout(() => cursor.classList.remove('clicking'), 150);
+      }
+
+      const targetEl = document.elementFromPoint(cursorX, cursorY);
+      if (targetEl) {
+        const cableEl = targetEl.closest('#cable');
+        if (cableEl) {
+          placeCable();
+          return;
+        }
+        targetEl.click();
+      }
+    });
+
+    socket.on('keyboard-input', (data) => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: data.key }));
+    });
+
+    window.addEventListener('resize', () => {
+      cursorX = Math.min(window.innerWidth, cursorX);
+      cursorY = Math.min(window.innerHeight, cursorY);
+      updateCursorPosition();
+    });
+  </script>
+</body>
+</html>

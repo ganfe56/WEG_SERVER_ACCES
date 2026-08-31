@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso — WEG México</title>
+  <style>
+    /* ============================================================
+       PALETA DE COLORES IDÉNTICA Y ESTILOS BASE
+       ============================================================ */
+    :root {
+      --bg-dark: #001E36;
+      --bg-card: #00579D;
+      --blue-main: #00579D;
+      --blue-accent: #57B7DC;
+      --gold-accent: #C9A66B;
+      --text-light: #F4F7FB;
+      --text-muted: #A4D8E3;
+      --error-red: #E74C3C;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    /* Header Nav idéntico */
+    header {
+      height: 60px;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0, 30, 54, 0.8);
+    }
+    .brand { font-weight: bold; font-size: 1.2rem; color: #fff; }
+    .nav-info { font-size: 0.9rem; color: var(--text-muted); }
+
+    /* Contenedor Principal del Login */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .eyebrow {
+      color: var(--blue-accent);
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-header h1 {
+      font-size: 1.8rem;
+      color: var(--text-light);
+    }
+
+    /* Formulario */
+    .form-group {
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(0, 30, 54, 0.6);
+      color: var(--text-light);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 2px rgba(87, 183, 220, 0.25);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 1rem;
+      border-radius: 6px;
+      border: none;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      background: var(--blue-main);
+      color: #fff;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn-submit:hover {
+      background: #0068ba;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    /* Mensajes de Validación */
+    .error-msg {
+      display: none;
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid var(--error-red);
+      color: #f8d7da;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-bottom: 1.25rem;
+      text-align: center;
+    }
+
+    /* Footer Nav idéntico */
+    footer {
+      height: 60px;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0, 30, 54, 0.8);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">WEG</div>
+    <div class="nav-info">Portal de Capacitación</div>
+  </header>
+
+  <main>
+    <div class="login-card">
+      <div class="login-header">
+        <div class="eyebrow">Plataforma Educativa</div>
+        <h1>Iniciar Sesión</h1>
+      </div>
+
+      <div class="error-msg" id="error-box">Usuario o contraseña incorrectos.</div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">ID de Empleado / Usuario</label>
+          <input type="text" id="username" placeholder="Ingresa tu ID" required autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-submit">Ingresar al Módulo</button>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    WEG México · Motores
+  </footer>
+   <script>
+    const loginForm = document.getElementById('login-form');
+    const errorBox = document.getElementById('error-box');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          errorBox.style.display = "none";
+          // Redirige a la URL asignada a ese departamento
+          window.location.href = data.redirectTo;
+        } else {
+          errorBox.textContent = data.message;
+          errorBox.style.display = "block";
+        }
+      } catch (err) {
+        errorBox.textContent = "Error al conectar con el servidor.";
+        errorBox.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>

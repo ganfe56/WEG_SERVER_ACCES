@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Remoto - Capacitación WEG</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background-color: #1e293b;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+    }
+
+    .title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #38bdf8;
+    }
+
+    .status {
+      font-size: 0.8rem;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background-color: #ef4444;
+      color: white;
+    }
+
+    .status.connected {
+      background-color: #10b981;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 12px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .btn {
+      background-color: #334155;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.15s;
+    }
+
+    .btn:active {
+      background-color: #475569;
+    }
+
+    .btn-primary {
+      background-color: #0284c7;
+    }
+
+    .btn-primary:active {
+      background-color: #0369a1;
+    }
+
+    .btn-danger {
+      background-color: #dc2626;
+    }
+
+    .btn-danger:active {
+      background-color: #b91c1c;
+    }
+
+    #trackpad {
+      flex: 1;
+      background-color: #1e293b;
+      border: 2px dashed #475569;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 0.9rem;
+      position: relative;
+      touch-action: none;
+    }
+
+    #trackpad:active {
+      border-color: #38bdf8;
+      background-color: #0f172a;
+    }
+
+    .keyboard-container {
+      display: flex;
+      gap: 8px;
+    }
+
+    .keyboard-input {
+      flex: 1;
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: white;
+      font-size: 0.9rem;
+    }
+
+    .keyboard-input:focus {
+      outline: 2px solid #38bdf8;
+    }
+  </style>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <header>
+    <div class="title">WEG Control Remoto</div>
+    <div id="status-badge" class="status">Desconectado</div>
+  </header>
+
+  <main>
+    <div class="controls-grid">
+      <button class="btn" onclick="sendAction('back')">❮ Anterior</button>
+      <button class="btn btn-primary" onclick="sendAction('next')">Siguiente ❯</button>
+      <button class="btn btn-primary" onclick="sendAction('complete_exercise')">Resolver Ejercicio</button>
+      <button class="btn btn-danger" onclick="sendAction('reset')">Reiniciar</button>
+    </div>
+
+    <div id="trackpad">
+      Mueve un dedo para desplazar el cursor.<br>Toca una vez para hacer clic.
+    </div>
+
+    <div class="keyboard-container">
+      <input type="text" id="remote-keyboard" class="keyboard-input" placeholder="Escribe aquí para enviar al PC...">
+    </div>
+  </main>
+
+  <script>
+    const socket = io();
+    const statusBadge = document.getElementById('status-badge');
+
+    socket.on('connect', () => {
+      statusBadge.textContent = 'Conectado';
+      statusBadge.classList.add('connected');
+    });
+
+    socket.on('disconnect', () => {
+      statusBadge.textContent = 'Desconectado';
+      statusBadge.classList.remove('connected');
+    });
+
+    // Lógica del Trackpad táctil
+    const trackpad = document.getElementById('trackpad');
+    let lastX = 0, lastY = 0;
+    let isMoving = false;
+    let hasMoved = false;
+    const SENSITIVITY = 1.8;
+
+    trackpad.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+        isMoving = true;
+        hasMoved = false;
+      }
+    }, { passive: false });
+
+    trackpad.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!isMoving || e.touches.length !== 1) return;
+
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+
+      const dx = (currentX - lastX) * SENSITIVITY;
+      const dy = (currentY - lastY) * SENSITIVITY;
+
+      if (Math.abs(currentX - lastX) > 0.5 || Math.abs(currentY - lastY) > 0.5) {
+        hasMoved = true;
+        socket.emit('trackpad-move', { dx: dx, dy: dy });
+      }
+
+      lastX = currentX;
+      lastY = currentY;
+    }, { passive: false });
+
+    trackpad.addEventListener('touchend', (e) => {
+      if (!hasMoved) {
+        socket.emit('trackpad-click');
+      }
+      isMoving = false;
+    });
+
+    // Envío de Acciones y Teclas
+    function sendAction(action) {
+      socket.emit('control-action', { action: action });
+    }
+
+    const remoteKeyboard = document.getElementById('remote-keyboard');
+    remoteKeyboard.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace') {
+        socket.emit('keyboard-press', { key: 'Backspace' });
+      } else if (e.key === ' ') {
+        socket.emit('keyboard-press', { key: 'Space' });
+      }
+    });
+
+    remoteKeyboard.addEventListener('input', (e) => {
+      if (e.data) {
+        socket.emit('keyboard-press', { key: e.data });
+      }
+      remoteKeyboard.value = '';
+    });
+  </script>
+</body>
+</html>

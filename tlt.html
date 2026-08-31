@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matriz de Capacitación TLT — WEG</title>
+  <style>
+    :root {
+      --bg-dark: #001E36;
+      --bg-card: #012647;
+      --blue-main: #00579D;
+      --blue-accent: #57B7DC;
+      --gold-accent: #C9A66B;
+      --text-light: #F4F7FB;
+      --text-muted: #A4D8E3;
+      --locked-bg: rgba(255, 255, 255, 0.03);
+      --locked-border: rgba(255, 255, 255, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      height: 65px;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0, 30, 54, 0.95);
+      position: sticky; top: 0; z-index: 10;
+    }
+
+    .brand { font-weight: 800; font-size: 1.4rem; letter-spacing: 1px; color: var(--blue-accent); }
+    .nav-info { font-size: 0.9rem; color: var(--text-muted); }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Panel de Selección de Categoría Operativa */
+    .category-selector-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .category-selector-panel h2 { font-size: 1.2rem; margin-bottom: 0.3rem; color: #fff; }
+    .category-selector-panel p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }
+
+    .role-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .role-btn {
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.05);
+      color: var(--text-light);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .role-btn:hover { background: rgba(87, 183, 220, 0.2); border-color: var(--blue-accent); }
+    .role-btn.active {
+      background: var(--blue-main);
+      border-color: var(--blue-accent);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(87, 183, 220, 0.4);
+    }
+
+    /* Barra de Búsqueda */
+    .controls { display: flex; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      padding: 0.8rem 1rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-size: 0.95rem;
+    }
+    .search-box:focus { outline: none; border-color: var(--blue-accent); }
+
+    .view-toggle { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted); }
+
+    /* Lista de Puestos */
+    .puestos-list { display: flex; flex-direction: column; gap: 0.8rem; }
+    .puesto-item {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 1.1rem 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      transition: 0.2s;
+    }
+    .puesto-item.locked { background: var(--locked-bg); border-color: var(--locked-border); opacity: 0.5; }
+
+    .puesto-info { flex: 1; }
+    .badge-status {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .badge-allowed { background: rgba(40, 167, 69, 0.2); color: #28a745; border: 1px solid #28a745; }
+    .badge-restricted { background: rgba(220, 53, 69, 0.2); color: #dc3545; border: 1px solid #dc3545; }
+
+    .puesto-title { font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 0.25rem; }
+    .puesto-meta { font-size: 0.85rem; color: var(--text-muted); }
+
+    .btn-select {
+      background: var(--blue-main);
+      color: #fff;
+      text-decoration: none;
+      padding: 0.65rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.88rem;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .btn-select.disabled { background: #334155; color: #94a3b8; cursor: not-allowed; pointer-events: none; }
+
+    footer {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">WEG</div>
+    <div class="nav-info">Plataforma TLT · Área de Bobinado</div>
+  </header>
+
+  <main>
+    <!-- Selector de Puesto Operativo -->
+    <div class="category-selector-panel">
+      <h2>Selecciona tu Puesto Operativo</h2>
+      <p>Elige tu nivel para visualizar las TLTs habilitadas según la matriz de capacitación:</p>
+      
+      <div class="role-buttons">
+        <button class="role-btn" onclick="seleccionarNivel('ayudante', this)">Ayudante General</button>
+        <button class="role-btn active" onclick="seleccionarNivel('op1', this)">Operador I</button>
+        <button class="role-btn" onclick="seleccionarNivel('op2', this)">Operador II</button>
+        <button class="role-btn" onclick="seleccionarNivel('op3', this)">Operador III</button>
+        <button class="role-btn" onclick="seleccionarNivel('op4', this)">Operador IV</button>
+        <button class="role-btn" onclick="seleccionarNivel('op5', this)">Operador V</button>
+        <button class="role-btn" onclick="seleccionarNivel('op6', this)">Operador VI</button>
+      </div>
+    </div>
+
+    <!-- Buscador de TLT -->
+    <div class="controls">
+      <input type="text" id="searchInput" class="search-box" placeholder="Buscar por código TLT o conocimiento..." oninput="actualizarVista()">
+    </div>
+
+    <!-- Checkbox para ocultar bloqueados -->
+    <div class="view-toggle">
+      <label>
+        <input type="checkbox" id="hideLockedCheck" onchange="actualizarVista()"> Ocultar TLTs no asignadas a este nivel
+      </label>
+    </div>
+
+    <!-- Contenedor del Catálogo -->
+    <div class="puestos-list" id="puestosContainer"></div>
+  </main>
+
+  <footer>WEG México · Planta Motores</footer>
+
+  <script>
+    // Las 10 TLTs de Bobinado tomadas de la imagen
+    const CURSOS = [
+      { id: 33529, titulo: "FORMADO DE BOBINA INICIAL", cat: "Bobinado" },
+      { id: 33666, titulo: "COLOCAR PAPEL AISLANTE 56/2-4 Y 6 POLOS, 90/4-6-8 POLOS", cat: "Bobinado" },
+      { id: 33660, titulo: "CRIMPADO DE TERMINALES ARMAZON 48 Y 56 MÁQUINA TYCO", cat: "Bobinado" },
+      { id: 33669, titulo: "FORMADO FINAL DE CABEZA DE BOBINA R.S.", cat: "Bobinado" },
+      { id: 33717, titulo: "COLOCAR TERMINALES EN EMBOBINADO R.S.", cat: "Bobinado" },
+      { id: 34643, titulo: "AISLAR CONEXIONES", cat: "Bobinado" },
+      { id: 45108, titulo: "AMARRAR CABEZA DE BOBINA MÁQ. SBA", cat: "Bobinado" },
+      { id: 33663, titulo: "PRUEBAS DIELECTRICAS MONOFASICOS", cat: "Bobinado" },
+      { id: 33667, titulo: "REALIZAR CONEXIONES R.S.Y 90/4-6 Y 8 POLOS", cat: "Bobinado" },
+      { id: 33733, titulo: "REPARACION DE ESTATORES EMBOBINADOS COMERCIALES", cat: "Bobinado" }
+    ];
+
+    // Matriz de permisos según la columna PUESTO de la imagen
+    const MATRIZ_ACCESO = {
+      "ayudante": [],
+      "op1": [33529, 33666],
+      "op2": [33660, 33669, 33717, 34643, 45108],
+      "op3": [33663, 33667, 33733],
+      "op4": [],
+      "op5": [],
+      "op6": []
+    };
+
+    let nivelSeleccionado = "op1";
+
+    function seleccionarNivel(nivelKey, element) {
+      nivelSeleccionado = nivelKey;
+      document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+      element.classList.add('active');
+      actualizarVista();
+    }
+
+    function actualizarVista() {
+      const container = document.getElementById('puestosContainer');
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+      const ocultarBloqueados = document.getElementById('hideLockedCheck').checked;
+      const cursosPermitidos = MATRIZ_ACCESO[nivelSeleccionado] || [];
+
+      let htmlContent = '';
+
+      CURSOS.forEach(curso => {
+        const tieneAcceso = cursosPermitidos.includes(curso.id);
+        const coincideBusqueda = curso.id.toString().includes(searchQuery) || 
+                                 curso.titulo.toLowerCase().includes(searchQuery);
+
+        if (!coincideBusqueda) return;
+        if (ocultarBloqueados && !tieneAcceso) return;
+
+        htmlContent += `
+          <div class="puesto-item ${tieneAcceso ? '' : 'locked'}">
+            <div class="puesto-info">
+              <span class="badge-status ${tieneAcceso ? 'badge-allowed' : 'badge-restricted'}">
+                ${tieneAcceso ? 'Habilitado' : 'Restringido'}
+              </span>
+              <div class="puesto-title">TLT ${curso.id} — ${curso.titulo}</div>
+              <div class="puesto-meta">Área: ${curso.cat}</div>
+            </div>
+            ${tieneAcceso 
+              ? `<a href="/curso?id=${curso.id}" class="btn-select">Ingresar al Curso</a>` 
+              : `<a class="btn-select disabled">No Disponible</a>`
+            }
+          </div>
+        `;
+      });
+
+      if (htmlContent === '') {
+        htmlContent = `<div style="text-align:center; padding: 2rem; color: var(--text-muted);">No hay TLTs disponibles con el filtro actual.</div>`;
+      }
+
+      container.innerHTML = htmlContent;
+    }
+
+    // Carga inicial
+    actualizarVista();
+  </script>
+</body>
+</html>
