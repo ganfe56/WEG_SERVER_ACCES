@@ -227,8 +227,44 @@
       } catch (err) {
         errorBox.textContent = "Error al conectar con el servidor.";
         errorBox.style.display = "block";
+     }
+  }); // <-- Aquí se cierra el evento/función anterior
+</script>
+
+<!-- 1. Cargar la librería externa de Socket.IO -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<!-- 2. Código de conexión y escuchadores para el mando -->
+<script>
+  const socket = io('https://weg-server-acces.onrender.com');
+
+  const userInput = document.querySelector('input[type="text"]') || document.querySelectorAll('input')[0];
+  const passInput = document.querySelector('input[type="password"]') || document.querySelectorAll('input')[1];
+  const loginBtn = document.querySelector('button') || document.querySelector('input[type="submit"]');
+
+  socket.on('control-action', (data) => {
+    if (data.action === 'down' || data.action === 'next') {
+      if (document.activeElement === userInput) passInput.focus();
+      else if (document.activeElement === passInput) loginBtn.focus();
+    } else if (data.action === 'up' || data.action === 'prev') {
+      if (document.activeElement === loginBtn) passInput.focus();
+      else if (document.activeElement === passInput) userInput.focus();
+    } else if (data.action === 'select' || data.action === 'click' || data.action === 'enter') {
+      loginBtn.click();
+    }
+  });
+
+socket.on('keyboard-input', (data) => {
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+      if (data.key === 'Backspace') {
+        document.activeElement.value = document.activeElement.value.slice(0, -1);
+      } else if (data.key === 'Enter') {
+        loginBtn.click();
+      } else if (data.key.length === 1) {
+        document.activeElement.value += data.key;
       }
-    });
-  </script>
+    }
+  });
+</script>
 </body>
 </html>
