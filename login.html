@@ -228,13 +228,10 @@
         errorBox.textContent = "Error al conectar con el servidor.";
         errorBox.style.display = "block";
      }
-  }); // <-- Aquí se cierra el evento/función anterior
-</script>
-
 <!-- 1. Cargar la librería externa de Socket.IO -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-<!-- 2. Código de conexión y escuchadores para el mando -->
+<!-- 2. Código de conexión, cursor virtual y escuchadores para el mando/trackpad -->
 <script>
   const socket = io('https://weg-server-acces.onrender.com');
 
@@ -242,6 +239,56 @@
   const passInput = document.querySelector('input[type="password"]') || document.querySelectorAll('input')[1];
   const loginBtn = document.querySelector('button') || document.querySelector('input[type="submit"]');
 
+  // --- Crear la "bolita" (cursor virtual) en pantalla ---
+  const cursor = document.createElement('div');
+  cursor.id = 'virtual-cursor';
+  cursor.style.cssText = `
+    position: fixed;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(0, 122, 255, 0.8);
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.05s ease-out;
+    display: none;
+  `;
+  document.body.appendChild(cursor);
+
+  let cursorX = window.innerWidth / 2;
+  let cursorY = window.innerHeight / 2;
+
+  function updateCursorPosition(x, y) {
+    cursorX = Math.max(0, Math.min(window.innerWidth, x));
+    cursorY = Math.max(0, Math.min(window.innerHeight, y));
+    cursor.style.left = `${cursorX}px`;
+    cursor.style.top = `${cursorY}px`;
+    cursor.style.display = 'block';
+  }
+
+  // Escuchar movimiento del trackpad desde la tablet
+  socket.on('trackpad-move', (data) => {
+    if (typeof data.dx === 'number' && typeof data.dy === 'number') {
+      updateCursorPosition(cursorX + data.dx, cursorY + data.dy);
+    } else if (typeof data.x === 'number' && typeof data.y === 'number') {
+      const posX = data.x <= 1 ? data.x * window.innerWidth : data.x;
+      const posY = data.y <= 1 ? data.y * window.innerHeight : data.y;
+      updateCursorPosition(posX, posY);
+    }
+  });
+
+  // Escuchar clic del trackpad
+  socket.on('trackpad-click', () => {
+    const element = document.elementFromPoint(cursorX, cursorY);
+    if (element) {
+      element.click();
+      element.focus();
+    }
+  });
+
+  // Escuchar botones de navegación D-Pad
   socket.on('control-action', (data) => {
     if (data.action === 'down' || data.action === 'next') {
       if (document.activeElement === userInput) passInput.focus();
@@ -250,11 +297,13 @@
       if (document.activeElement === loginBtn) passInput.focus();
       else if (document.activeElement === passInput) userInput.focus();
     } else if (data.action === 'select' || data.action === 'click' || data.action === 'enter') {
-      loginBtn.click();
+      if (document.activeElement) document.activeElement.click();
+      else loginBtn.click();
     }
   });
 
-socket.on('keyboard-input', (data) => {
+  // Escuchar escritura de teclado
+  socket.on('keyboard-input', (data) => {
     if (document.activeElement && document.activeElement.tagName === 'INPUT') {
       if (data.key === 'Backspace') {
         document.activeElement.value = document.activeElement.value.slice(0, -1);
