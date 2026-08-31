@@ -23,9 +23,10 @@ app.post('/login', (req, res) => {
 
   // Validación de credenciales
   if (username === 'bobinado' && password === 'weg2026') {
-    return res.json({ success: true, redirectTo: '/ejercicio-bobinado.html' });
+    // Redirige al menú de selección de curso (tlt.html)
+    return res.json({ success: true, redirectTo: '/tlt' });
   } else if (username === 'admin' && password === 'admin2026') {
-    return res.json({ success: true, redirectTo: '/control.HTML' });
+    return res.json({ success: true, redirectTo: '/control' });
   }
 
   return res.json({ success: false, message: 'Usuario o contraseña incorrectos' });
