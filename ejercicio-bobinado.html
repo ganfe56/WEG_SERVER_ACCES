@@ -133,6 +133,47 @@
 
     .btn-verify { background: #198754; color: #fff; }
     .btn-verify:hover { background: #157347; }
+
+    /* ESTILOS DEL PANEL DE RESULTADOS DE EVALUACIÓN */
+    .result-card {
+      margin-top: 1.2rem;
+      width: 100%;
+      max-width: 1020px;
+      padding: 1.2rem 1.5rem;
+      border-radius: 10px;
+      display: none;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .result-card.success {
+      background: #0f3822;
+      border: 1px solid #198754;
+      color: #d1e7dd;
+    }
+
+    .result-card.warning {
+      background: #4a2800;
+      border: 1px solid #ffc107;
+      color: #fff3cd;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .score-badge {
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -163,6 +204,15 @@
       <button class="btn btn-reset" onclick="limpiarTrazos()">Reiniciar Trazo</button>
       <button class="btn btn-verify" onclick="validarEjercicio()">Verificar Conexión</button>
     </div>
+  </div>
+
+  <!-- PANEL DONDE SE DESPLIEGA LA PUNTUACIÓN AUTOMÁTICA -->
+  <div id="resultCard" class="result-card">
+    <div class="result-header">
+      <h2 id="resultTitle" style="font-size: 1.3rem;">Resultados de Evaluación</h2>
+      <div id="scoreBadge" class="score-badge">0%</div>
+    </div>
+    <p id="resultMsg" style="font-size: 0.95rem; line-height: 1.4;"></p>
   </div>
 
   <script>
@@ -219,9 +269,7 @@
       else if (dist >= 10) baseHeight = 370;
       else if (dist >= 6)  baseHeight = 320;
 
-      // Separación vertical en cascada para conexiones concurrentes
       const offsetPaso = (index % 4) * 12; 
-      // Desfase horizontal suave para evitar la superposición directa de verticales
       const xOffset = ((index % 3) - 1) * 3;
 
       return {
@@ -234,7 +282,7 @@
     function dibujarDiagramaBase() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // --- LINEAS GUÍA DE CARRIL SUBTERRÁNEAS (Guías visuales de separación) ---
+      // --- LINEAS GUÍA DE CARRIL SUBTERRÁNEAS ---
       ctx.strokeStyle = '#e9ecef';
       ctx.lineWidth = 1;
       ctx.setLineDash([2, 4]);
@@ -332,7 +380,7 @@
         }
       });
 
-      // --- CONEXIONES REALIZADAS CON SEPARACIÓN Y DESFASE ---
+      // --- CONEXIONES REALIZADAS ---
       conexionesUsuario.forEach((conn, idx) => {
         const nA = NODOS[conn.from];
         const nB = NODOS[conn.to];
@@ -409,13 +457,42 @@
     function deshacerUltimo() {
       conexionesUsuario.pop();
       nodoSeleccionado = null;
+      document.getElementById('resultCard').style.display = 'none';
       dibujarDiagramaBase();
     }
 
     function limpiarTrazos() {
       conexionesUsuario = [];
       nodoSeleccionado = null;
+      document.getElementById('resultCard').style.display = 'none';
       dibujarDiagramaBase();
+    }
+
+    // ================================================================
+    // MOTOR DE EVALUACIÓN AUTOMÁTICA Y CÁLCULO DE PORCENTAJE
+    // ================================================================
+    const ESQUEMA_CORRECTO = [
+      // Fase A (Azul)
+      { from: 'T1', to: 'R1', fase: 'blue' },
+      { from: 'R12', to: 'R24', fase: 'blue' },
+      { from: 'R13', to: 'T4', fase: 'blue' },
+
+      // Fase C (Verde)
+      { from: 'T3', to: 'R17', fase: 'green' },
+      { from: 'R4', to: 'R16', fase: 'green' },
+      { from: 'R5', to: 'T6', fase: 'green' },
+
+      // Fase B (Rojo Punteado)
+      { from: 'T2', to: 'R9', fase: 'red' },
+      { from: 'R8', to: 'R20', fase: 'red' },
+      { from: 'R21', to: 'T5', fase: 'red' }
+    ];
+
+    function sonConexionesIguales(c1, c2) {
+      const mismoColor = c1.fase === c2.fase;
+      const sentidoDirecto = (c1.from === c2.from && c1.to === c2.to);
+      const sentidoInverso = (c1.from === c2.to && c1.to === c2.from);
+      return mismoColor && (sentidoDirecto || sentidoInverso);
     }
 
     function validarEjercicio() {
@@ -423,7 +500,41 @@
         alert("⚠️ Realiza al menos una conexión antes de verificar.");
         return;
       }
-      alert(`✅ Se han registrado ${conexionesUsuario.length} conexión(es) de bobinado correctamente.`);
+
+      const totalCorrectas = ESQUEMA_CORRECTO.length; // 9 conexiones clave
+      let aciertos = 0;
+
+      ESQUEMA_CORRECTO.forEach(conexionBase => {
+        const encontrada = conexionesUsuario.some(u => sonConexionesIguales(u, conexionBase));
+        if (encontrada) aciertos++;
+      });
+
+      // Cálculo del porcentaje exacto
+      const porcentaje = Math.round((aciertos / totalCorrectas) * 100);
+
+      // Despliegue en el panel visual
+      const card = document.getElementById('resultCard');
+      const title = document.getElementById('resultTitle');
+      const badge = document.getElementById('scoreBadge');
+      const msg = document.getElementById('resultMsg');
+
+      card.style.display = 'block';
+      badge.innerText = `${porcentaje}%`;
+
+      if (porcentaje >= 80) {
+        card.className = 'result-card success';
+        title.innerText = '🎉 ¡Excelente! Diagrama Aprobado';
+        msg.innerHTML = `Completaste <strong>${aciertos} de ${totalCorrectas}</strong> conexiones correctamente.<br>El esquema cumple con la configuración del motor trifásico.`;
+      } else {
+        card.className = 'result-card warning';
+        title.innerText = '⚠️ Revisa las Conexiones del Bobinado';
+        msg.innerHTML = `Obtuviste <strong>${aciertos} de ${totalCorrectas}</strong> aciertos (${porcentaje}%).<br>Asegúrate de conectar las terminales correspondientes y seleccionar el color/fase correcto antes de trazar.`;
+      }
+
+      // Si existe conexión de Socket.IO activa con tu servidor, reporta el resultado
+      if (typeof socket !== 'undefined') {
+        socket.emit('actividad-evaluada', { porcentaje, aciertos, total: totalCorrectas });
+      }
     }
 
     dibujarDiagramaBase();
